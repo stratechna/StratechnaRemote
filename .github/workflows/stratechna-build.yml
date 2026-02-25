@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -30,10 +31,9 @@ jobs:
         shell: pwsh
         run: |
           & $env:VCPKG_ROOT\vcpkg.exe install `
-            libvpx:x64-windows-static `
-            libyuv:x64-windows-static `
-            opus:x64-windows-static `
-            aom:x64-windows-static
+            libvpx libyuv opus aom `
+            --triplet x64-windows-static `
+            --classic
 
       - name: Build (Windows)
         shell: pwsh
