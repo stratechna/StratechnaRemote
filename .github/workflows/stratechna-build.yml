@@ -2,7 +2,9 @@ name: StratechnaRemote Builds
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - master
 jobs:
   windows:
     runs-on: windows-latest
