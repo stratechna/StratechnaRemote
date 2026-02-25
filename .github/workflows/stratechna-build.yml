@@ -17,42 +17,55 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install FVM + Flutter 3.24.5
-        shell: pwsh
+      # Instala Flutter (inclui Dart) e coloca no PATH
+      - name: Setup Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Install FVM
+        shell: bash
         run: |
-          choco install -y dart-sdk
           dart --version
           dart pub global activate fvm
-          $env:PATH = "$env:USERPROFILE\AppData\Local\Pub\Cache\bin;$env:PATH"
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          fvm --version
           fvm install 3.24.5
-          fvm use 3.24.5
+          fvm use 3.24.5 --force
           fvm flutter --version
 
       - name: Apply Stratechna branding (UI only)
-        shell: pwsh
+        shell: bash
         run: |
           bash scripts_stratechna/05_apply_branding_flutter_ui.sh
 
       - name: Flutter pub get
-        shell: pwsh
+        shell: bash
         run: |
           cd flutter
           fvm flutter pub get
 
       - name: Build Windows (Flutter)
-        shell: pwsh
+        shell: bash
         run: |
           cd flutter
           fvm flutter build windows --release
-          New-Item -ItemType Directory -Force ..\dist | Out-Null
-          $exe = Get-ChildItem -Recurse build\windows -Filter "*.exe" | Where-Object { $_.FullName -match "Release" } | Select-Object -First 1
-          if (-not $exe) { throw "No exe found under flutter/build/windows" }
-          Copy-Item $exe.FullName ..\dist\StratechnaRemote.exe
+          mkdir -p ../dist
+          # procurar exe no output do build do Flutter
+          EXE="$(find build/windows -type f -name "*.exe" | grep -i 'Release' | head -n 1 || true)"
+          if [ -z "$EXE" ]; then
+            EXE="$(find build/windows -type f -name "*.exe" | head -n 1 || true)"
+          fi
+          test -n "$EXE"
+          cp -f "$EXE" ../dist/StratechnaRemote.exe
 
       - name: Zip (Windows)
-        shell: pwsh
+        shell: bash
         run: |
-          Compress-Archive -Path dist\StratechnaRemote.exe -DestinationPath StratechnaRemote-Windows-x86_64.zip -Force
+          cd dist
+          7z a -tzip ../StratechnaRemote-Windows-x86_64.zip StratechnaRemote.exe
 
       - name: Upload artifact (Windows)
         uses: actions/upload-artifact@v4
@@ -81,15 +94,21 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install FVM + Flutter 3.24.5
+      - name: Setup Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Install FVM
         run: |
-          dart --version || true
-          sudo apt-get install -y dart || true
           dart --version
           dart pub global activate fvm
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          fvm --version
           fvm install 3.24.5
-          fvm use 3.24.5
+          fvm use 3.24.5 --force
           fvm flutter --version
 
       - name: Apply Stratechna branding (UI only)
@@ -106,12 +125,8 @@ jobs:
           cd flutter
           fvm flutter build linux --release
           mkdir -p ../dist
-          # tentar encontrar binário no bundle
-          BIN="$(find build/linux -type f -perm -111 -name 'rustdesk' -o -name 'StratechnaRemote' 2>/dev/null | head -n 1 || true)"
-          if [ -z "$BIN" ]; then
-            # fallback: procurar executável no bundle
-            BIN="$(find build/linux -type f -perm -111 2>/dev/null | head -n 1 || true)"
-          fi
+          # encontrar binário gerado
+          BIN="$(find build/linux -type f -perm -111 2>/dev/null | head -n 1 || true)"
           test -n "$BIN"
           cp -f "$BIN" ../dist/StratechnaRemote
           strip ../dist/StratechnaRemote || true
