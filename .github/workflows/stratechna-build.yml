@@ -40,6 +40,10 @@ jobs:
         run: |
           cd flutter
           flutter pub get
+      - name: Run build_runner
+        run: |
+          cd flutter
+          flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows (Flutter)
         shell: bash
