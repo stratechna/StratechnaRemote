@@ -115,6 +115,13 @@ jobs:
           cd flutter
           flutter pub get
 
+      - name: Run build_runner
+        shell: bash
+        run: |
+          cd flutter
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+
       - name: Build Linux (Flutter)
         run: |
           cd flutter
