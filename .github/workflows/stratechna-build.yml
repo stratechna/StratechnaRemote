@@ -40,7 +40,7 @@ jobs:
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
-          & $env:VCPKG_ROOT\vcpkg.exe install opus:x64-windows
+          & $env:VCPKG_ROOT\vcpkg.exe install
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
@@ -141,7 +141,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$VCPKG_ROOT/vcpkg" install opus:x64-linux
+          "$VCPKG_ROOT/vcpkg" install
 
       - name: Build Rust core (Linux, lib only)
         shell: bash
