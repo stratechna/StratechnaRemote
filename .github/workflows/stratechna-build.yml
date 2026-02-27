@@ -40,10 +40,12 @@ jobs:
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
-          & $env:VCPKG_ROOT\vcpkg.exe install
+          & $env:VCPKG_ROOTcpkg.exe install --triplet x64-windows-static
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows-static
         run: |
           set -euo pipefail
           cargo build --release -p rustdesk --features flutter --lib
