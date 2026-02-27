@@ -34,6 +34,7 @@ jobs:
         shell: pwsh
         run: |
           git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
+          git -C $env:GITHUB_WORKSPACE\vcpkg checkout 2024.05.24
           & $env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat
           "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -134,6 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone https://github.com/microsoft/vcpkg "$GITHUB_WORKSPACE/vcpkg"
+          git -C "$GITHUB_WORKSPACE/vcpkg" checkout 2024.05.24
           "$GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.sh"
           echo "VCPKG_ROOT=$GITHUB_WORKSPACE/vcpkg" >> "$GITHUB_ENV"
 
