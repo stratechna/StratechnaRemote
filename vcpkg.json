@@ -83,11 +83,6 @@
       "platform": "((android | ios | (linux & arm32)) & static)"
     }
   ],
-  "vcpkg-configuration": {
-    "overlay-ports": [
-      "./res/vcpkg"
-    ]
-  },
   "overrides": [
     {
       "name": "ffnvcodec",
