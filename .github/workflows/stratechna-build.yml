@@ -40,7 +40,7 @@ jobs:
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
-          & $env:VCPKG_ROOTcpkg.exe install --triplet x64-windows-static
+          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows-static
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
@@ -112,6 +112,7 @@ jobs:
             ninja-build \
             libasound2-dev libpulse-dev \
             libdbus-1-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
             libxcb-randr0-dev libxdo-dev libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             nasm yasm python3 python3-pip \
             autoconf automake libtool
