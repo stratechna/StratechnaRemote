@@ -40,7 +40,7 @@ jobs:
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
-          & $env:VCPKG_ROOTcpkg.exe install --triplet x64-windows-static
+          & $env:VCPKG_ROOTcpkg.exe install --triplet x64-windows-static
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
