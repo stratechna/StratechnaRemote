@@ -54,10 +54,11 @@ jobs:
         shell: pwsh
         run: |
           $hdr = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include\opus\opus_multistream.h"
-          if (!(Test-Path $hdr)) {
+          if (Test-Path $hdr) {
+            Get-Item $hdr | Format-List
+          } else {
             Write-Host "WARNING: Missing header: $hdr"
           }
-          Get-Item $hdr | Format-List
 
       - name: Debug opus headers (Windows)
         shell: pwsh
@@ -176,6 +177,7 @@ jobs:
 
       - name: Debug opus headers (Linux)
         shell: bash
+        shell: bash
         run: |
           set -euo pipefail
           echo "VCPKG include dir:"
@@ -184,10 +186,21 @@ jobs:
           find "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" -maxdepth 4 -type f -iname "*opus*multistream*.h" -o -iname "*opus*.h" | head -n 200 || true
 
 
+      - name: Debug vpx headers (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Searching vpx headers:"
+          find "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" -maxdepth 5 -type f -path "*/vpx/*" | head -n 200 || true
+          test -f "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include/vpx/vp8.h" && echo "FOUND vpx/vp8.h" || echo "MISSING vpx/vp8.h"
+
+
       - name: Build Rust core (Linux, lib only)
         env:
           BINDGEN_EXTRA_CLANG_ARGS: >-
             -I${{ github.workspace }}/vcpkg/installed/x64-linux/include -I/usr/include
+          CFLAGS: -I${{ github.workspace }}/vcpkg/installed/x64-linux/include
+          CXXFLAGS: -I${{ github.workspace }}/vcpkg/installed/x64-linux/include
         run: |
           set -euo pipefail
           cargo build --release -p rustdesk --features flutter --lib
