@@ -59,6 +59,14 @@ jobs:
           }
           Get-Item $hdr | Format-List
 
+      - name: Debug opus headers (Windows)
+        shell: pwsh
+        run: |
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include"
+          Write-Host "Include dir: $inc"
+          Get-ChildItem -Recurse -ErrorAction SilentlyContinue $inc | Where-Object { $_.Name -match 'opus' -and $_.Name -match '\.h$' } | Select-Object -First 200 FullName
+
+
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
@@ -164,6 +172,16 @@ jobs:
         run: |
           set -euo pipefail
           "$VCPKG_ROOT/vcpkg" install
+
+      - name: Debug opus headers (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "VCPKG include dir:"
+          ls -la "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" || true
+          echo "Searching opus headers:"
+          find "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" -maxdepth 4 -type f -iname "*opus*multistream*.h" -o -iname "*opus*.h" | head -n 200 || true
+
 
       - name: Build Rust core (Linux, lib only)
         shell: bash
