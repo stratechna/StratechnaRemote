@@ -177,7 +177,6 @@ jobs:
 
       - name: Debug opus headers (Linux)
         shell: bash
-        shell: bash
         run: |
           set -euo pipefail
           echo "VCPKG include dir:"
