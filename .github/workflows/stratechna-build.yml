@@ -185,12 +185,9 @@ jobs:
 
 
       - name: Build Rust core (Linux, lib only)
-        shell: bash
         env:
           BINDGEN_EXTRA_CLANG_ARGS: >-
             -I${{ github.workspace }}/vcpkg/installed/x64-linux/include -I/usr/include
-        run: |
-        shell: bash
         run: |
           set -euo pipefail
           cargo build --release -p rustdesk --features flutter --lib
