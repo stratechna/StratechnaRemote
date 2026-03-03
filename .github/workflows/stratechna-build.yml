@@ -36,11 +36,29 @@ jobs:
           git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
           & $env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat
           "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_DEFAULT_TRIPLET=x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE\vcpkg\installed" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include"
+          "BINDGEN_EXTRA_CLANG_ARGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CXXFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "INCLUDE=$inc;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
           & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows-static
+
+      - name: Verify Opus headers exist (Windows)
+        shell: pwsh
+        run: |
+          $hdr = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include\opus\opus_multistream.h"
+          if (!(Test-Path $hdr)) {
+            Write-Error "Missing header: $hdr"
+          }
+          Get-Item $hdr | Format-List
+
 
       - name: Build Rust core (Windows, lib only)
         shell: bash
@@ -114,6 +132,7 @@ jobs:
             libdbus-1-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
             libxcb-randr0-dev libxdo-dev libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libpam0g-dev \
             nasm yasm python3 python3-pip \
             autoconf automake libtool
 
