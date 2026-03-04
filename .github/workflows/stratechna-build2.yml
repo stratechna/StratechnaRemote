@@ -175,7 +175,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "$VCPKG_ROOT/vcpkg" install libvpx libyuv opus
+          "$VCPKG_ROOT/vcpkg" install
 
       - name: Debug opus headers (Linux)
         shell: bash
