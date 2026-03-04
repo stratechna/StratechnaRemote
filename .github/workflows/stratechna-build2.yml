@@ -32,6 +32,20 @@ jobs:
           flutter doctor -v
 
       - name: Setup vcpkg (Windows)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
+          & $env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat
+          "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_DEFAULT_TRIPLET=x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE\vcpkg\installed" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include"
+          "BINDGEN_EXTRA_CLANG_ARGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CXXFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "INCLUDE=$inc;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
