@@ -76,8 +76,7 @@ jobs:
           VCPKG_DEFAULT_TRIPLET: x64-windows
         run: |
           set -euo pipefail
-          export VCPKG_DEFAULT_TRIPLET=x64-windows
-export VCPKG_DEFAULT_TRIPLET=x64-windows
+          
           cargo build --release -p rustdesk --features flutter --lib
           ls -la target/release || true
 
@@ -176,7 +175,7 @@ export VCPKG_DEFAULT_TRIPLET=x64-windows
         shell: bash
         run: |
           set -euo pipefail
-          "$VCPKG_ROOT/vcpkg" install libvpx libyuv opus libvpx libyuv opus
+          "$VCPKG_ROOT/vcpkg" install libvpx libyuv opus
 
       - name: Debug opus headers (Linux)
         shell: bash
@@ -205,8 +204,7 @@ export VCPKG_DEFAULT_TRIPLET=x64-windows
           CXXFLAGS: -I${{ github.workspace }}/vcpkg/installed/x64-linux/include
         run: |
           set -euo pipefail
-          export VCPKG_DEFAULT_TRIPLET=x64-windows
-export VCPKG_DEFAULT_TRIPLET=x64-windows
+          
           cargo build --release -p rustdesk --features flutter --lib
           ls -la target/release | egrep -i "librustdesk|\.so" || true
 
