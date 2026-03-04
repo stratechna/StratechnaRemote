@@ -163,7 +163,6 @@ jobs:
           flutter --version
           flutter doctor -v
 
-      - name: Setup vcpkg (Linux)
       - name: Install vcpkg deps (Linux)
         shell: bash
         run: |
