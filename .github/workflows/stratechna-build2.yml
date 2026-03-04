@@ -1,0 +1,245 @@
+name: StratechnaRemote Builds 2
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - master
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter doctor
+        shell: bash
+        run: |
+          flutter --version
+          flutter doctor -v
+
+      - name: Setup vcpkg (Windows)
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
+          & $env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat
+          "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_DEFAULT_TRIPLET=x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE\vcpkg\installed" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include"
+          "BINDGEN_EXTRA_CLANG_ARGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CXXFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "INCLUDE=$inc;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install vcpkg deps (Windows)
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows
+
+      - name: Verify Opus headers exist (Windows)
+        shell: pwsh
+        run: |
+          $hdr = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include\opus\opus_multistream.h"
+          if (Test-Path $hdr) {
+            Get-Item $hdr | Format-List
+          } else {
+            Write-Host "WARNING: Missing header: $hdr"
+          }
+
+      - name: Debug opus headers (Windows)
+        shell: pwsh
+        run: |
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include"
+          Write-Host "Include dir: $inc"
+          Get-ChildItem -Recurse -ErrorAction SilentlyContinue $inc | Where-Object { $_.Name -match 'opus' -and $_.Name -match '\.h$' } | Select-Object -First 200 FullName
+
+
+
+      - name: Build Rust core (Windows, lib only)
+        shell: bash
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows
+        run: |
+          set -euo pipefail
+          export VCPKG_DEFAULT_TRIPLET=x64-windows
+cargo build --release -p rustdesk --features flutter --lib
+          ls -la target/release || true
+
+      - name: Apply Stratechna branding (UI only)
+        shell: bash
+        run: |
+          bash scripts_stratechna/05_apply_branding_flutter_ui.sh
+
+      - name: Flutter pub get
+        shell: bash
+        run: |
+          cd flutter
+          flutter pub get
+
+      - name: Run build_runner
+        shell: bash
+        run: |
+          cd flutter
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows (Flutter)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd flutter
+          flutter build windows --release
+          mkdir -p ../dist
+          EXE="$(find build/windows -type f -name "*.exe" | grep -i 'Release' | head -n 1 || true)"
+          if [ -z "$EXE" ]; then
+            EXE="$(find build/windows -type f -name "*.exe" | head -n 1 || true)"
+          fi
+          test -n "$EXE"
+          cp -f "$EXE" ../dist/StratechnaRemote.exe
+
+      - name: Zip (Windows)
+        shell: bash
+        run: |
+          cd dist
+          7z a -tzip ../StratechnaRemote-Windows-x86_64.zip StratechnaRemote.exe
+
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: StratechnaRemote-Windows-x86_64
+          path: StratechnaRemote-Windows-x86_64.zip
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Linux deps for Flutter desktop
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential clang cmake pkg-config git curl unzip zip \
+            libgtk-3-dev libappindicator3-dev libvulkan-dev \
+            libssl-dev libclang-dev \
+            ninja-build \
+            libasound2-dev libpulse-dev \
+            libdbus-1-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libxcb-randr0-dev libxdo-dev libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libpam0g-dev \
+            libopus-dev \
+            nasm yasm python3 python3-pip \
+            autoconf automake libtool
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter doctor
+        run: |
+          flutter --version
+          flutter doctor -v
+
+      - name: Setup vcpkg (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/microsoft/vcpkg "$GITHUB_WORKSPACE/vcpkg"
+          "$GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.sh"
+          echo "VCPKG_ROOT=$GITHUB_WORKSPACE/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Install vcpkg deps (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$VCPKG_ROOT/vcpkg" install libvpx libyuv opus
+
+      - name: Debug opus headers (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "VCPKG include dir:"
+          ls -la "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" || true
+          echo "Searching opus headers:"
+          find "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" -maxdepth 4 -type f -iname "*opus*multistream*.h" -o -iname "*opus*.h" | head -n 200 || true
+
+
+      - name: Debug vpx headers (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Searching vpx headers:"
+          find "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include" -maxdepth 5 -type f -path "*/vpx/*" | head -n 200 || true
+          test -f "$GITHUB_WORKSPACE/vcpkg/installed/x64-linux/include/vpx/vp8.h" && echo "FOUND vpx/vp8.h" || echo "MISSING vpx/vp8.h"
+
+
+      - name: Build Rust core (Linux, lib only)
+        env:
+          BINDGEN_EXTRA_CLANG_ARGS: >-
+            -I${{ github.workspace }}/vcpkg/installed/x64-linux/include -I/usr/include
+          CFLAGS: -I${{ github.workspace }}/vcpkg/installed/x64-linux/include
+          CXXFLAGS: -I${{ github.workspace }}/vcpkg/installed/x64-linux/include
+        run: |
+          set -euo pipefail
+          export VCPKG_DEFAULT_TRIPLET=x64-windows
+cargo build --release -p rustdesk --features flutter --lib
+          ls -la target/release | egrep -i "librustdesk|\.so" || true
+
+      - name: Apply Stratechna branding (UI only)
+        run: |
+          bash scripts_stratechna/05_apply_branding_flutter_ui.sh
+
+      - name: Flutter pub get
+        run: |
+          cd flutter
+          flutter pub get
+
+      - name: Run build_runner
+        shell: bash
+        run: |
+          cd flutter
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Linux (Flutter)
+        run: |
+          set -euo pipefail
+          cd flutter
+          flutter build linux --release
+          mkdir -p ../dist
+          BIN="$(find build/linux -type f -perm -111 2>/dev/null | head -n 1 || true)"
+          test -n "$BIN"
+          cp -f "$BIN" ../dist/StratechnaRemote
+          strip ../dist/StratechnaRemote || true
+
+      - name: Zip (Linux)
+        run: |
+          zip -9 -j StratechnaRemote-Linux-x86_64.zip dist/StratechnaRemote
+
+      - name: Upload artifact (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: StratechnaRemote-Linux-x86_64
+          path: StratechnaRemote-Linux-x86_64.zip
