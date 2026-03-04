@@ -32,6 +32,8 @@ jobs:
           flutter doctor -v
 
       - name: Setup vcpkg (Windows)
+      - name: Export VCPKG_ROOT
+        run: echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" >> $GITHUB_ENV
         shell: pwsh
         run: |
           git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
@@ -164,6 +166,8 @@ jobs:
           flutter doctor -v
 
       - name: Setup vcpkg (Linux)
+      - name: Export VCPKG_ROOT
+        run: echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" >> $GITHUB_ENV
         shell: bash
         run: |
           set -euo pipefail
