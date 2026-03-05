@@ -37,10 +37,10 @@ jobs:
           git clone https://github.com/microsoft/vcpkg $env:GITHUB_WORKSPACE\vcpkg
           & $env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat
           "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "VCPKG_DEFAULT_TRIPLET=x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_DEFAULT_TRIPLET=x64-windows-static" | Out-File -FilePath $env:GITHUB_ENV -Append
           "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE\vcpkg\installed" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include"
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include"
           "BINDGEN_EXTRA_CLANG_ARGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
           "CFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
           "CXXFLAGS=-I$inc" | Out-File -FilePath $env:GITHUB_ENV -Append
@@ -49,12 +49,12 @@ jobs:
       - name: Install vcpkg deps (Windows)
         shell: pwsh
         run: |
-          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows
+          & "$env:VCPKG_ROOT\vcpkg.exe" install --triplet x64-windows-static
 
       - name: Verify Opus headers exist (Windows)
         shell: pwsh
         run: |
-          $hdr = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include\opus\opus_multistream.h"
+          $hdr = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include\opus\opus_multistream.h"
           if (Test-Path $hdr) {
             Get-Item $hdr | Format-List
           } else {
@@ -64,7 +64,7 @@ jobs:
       - name: Debug opus headers (Windows)
         shell: pwsh
         run: |
-          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows\include"
+          $inc = "$env:GITHUB_WORKSPACE\vcpkg\installed\x64-windows-static\include"
           Write-Host "Include dir: $inc"
           Get-ChildItem -Recurse -ErrorAction SilentlyContinue $inc | Where-Object { $_.Name -match 'opus' -and $_.Name -match '\.h$' } | Select-Object -First 200 FullName
 
@@ -73,7 +73,7 @@ jobs:
       - name: Build Rust core (Windows, lib only)
         shell: bash
         env:
-          VCPKG_DEFAULT_TRIPLET: x64-windows
+          VCPKG_DEFAULT_TRIPLET: x64-windows-static
         run: |
           set -euo pipefail
           
