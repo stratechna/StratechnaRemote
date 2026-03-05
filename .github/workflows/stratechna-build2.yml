@@ -163,6 +163,14 @@ jobs:
           flutter --version
           flutter doctor -v
 
+      - name: Setup vcpkg (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/microsoft/vcpkg "$GITHUB_WORKSPACE/vcpkg"
+          "$GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.sh"
+          echo "VCPKG_ROOT=$GITHUB_WORKSPACE/vcpkg" >> "$GITHUB_ENV"
+
       - name: Install vcpkg deps (Linux)
         shell: bash
         run: |
